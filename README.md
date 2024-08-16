@@ -25,7 +25,7 @@ For anyone moving to GA4 from GA360, this represents a shift in scope. GA360 exp
 Each row in the event tables is a record of one event. There are several standard columns: event_date, event_timestamp, event_name, user_pseudo_id, for a full list of fields exported by default, see https://support.google.com/firebase/answer/7029846. In addition to single-value fields, there are nested fields as well.
 
 The simpler nested fields can be referenced with dot-notation sql definitions, as shown in this example of the “ECommerce Purchase Revenue” dimension:
-```json
+```
 
   dimension: ecommerce__purchase_revenue {
     type: number
@@ -40,7 +40,7 @@ Here, “purchase_revenue” is an element of the ecommerce field.
 
 However, Some elements within GA4 are packaged as repeating key/value pairs such as the “event_params” field:
 
-```json
+```
 event_params:[
   {
     "value": {
@@ -188,11 +188,15 @@ The events view brings together the event level data defined in the various even
 As the event data is a representation of the original source rows from your events_* tables, there are a mixture of single-value fields and simple nested fields, as well as  repeating key/value fields available within the unnested event_data fields. The single-value fields and simple nested fields are defined within this “events.view” file. The repeating key/value fields for the event parameters have been defined in “event_data_event_params.view”, and the repeating key/value fields for the user properties have been defined in “event_data_user_properties.view”. Both “event_data_event_params.view” and “event_data_user_properties.view” are extended into events.view.
 
 The definition for a repeating key/value field uses the following format:
+```sql
+
 (SELECT value.*value_type* FROM UNNEST(*nested_field*) WHERE key = "*key_value*")
+
+```
 
 
 Here is an example of LookML used to define a nested dimension.
-```json
+```
 dimension: event_param_all_data {
   group_label: "Event: Parameters"
   label: "All Data"
@@ -243,7 +247,7 @@ Another file that is extended into “events.view”, and not referenced in the 
 
 Similar to how the landing and exit pages are obtained at the session-level, we are able to query within the scope of the session from within the unnested element. For example we can obtain the 3rd page view in a session with this dimension:
 
-```json
+```
   dimension: page_path_3 {
     view_label: "Page Flow"
     group_label: "Page Path"
@@ -272,7 +276,7 @@ The Page Funnel view is extended into “sessions.view”. The dimensions and me
 
 The “tag” dimensions are what qualifies subsequent page views for inclusion in the resultset. If you filter for a value on Page 1, any subsequent page views that do not follow a qualifying “Page 1” event will be excluded from the measures defined in this view. This process repeats for all subsequently filtered page ranks (up to 6). This can be seen in the difference between the page_1_tag dimension and page_6_tag:
 
-```json
+```
 
   dimension: page_1_tag {
     ...
