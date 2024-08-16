@@ -192,14 +192,14 @@ The definition for a repeating key/value field uses the following format:
 
 
 Here is an example of LookML used to define a nested dimension.
-````json
+```json
 dimension: event_param_all_data {
   group_label: "Event: Parameters"
   label: "All Data"
   type: number
   sql: (SELECT value.double_value FROM UNNEST(event_params) WHERE key = "all_data") ;;
 }
-````
+```
 
 Using this method of sub-selecting allows a single row to return for an event with all event parameters selected in horizontally extending columns. If we were to unnest event_params directly and define the dimensions from the unnested results, there would be multiple rows per event:
 
@@ -220,7 +220,7 @@ If you are initiating the block with a large amount of custom event parameters a
 
 Sample Query for obtaining a list of all event parameter keys and their respective values:
 
- ````sql
+ ```sql
  SELECT  ep.key
  , case when count(value.string_value) > 0 then true else false end as string_value_populated
  , case when count(value.int_value) > 0 then true else false end as int_value_populated
@@ -230,7 +230,8 @@ Sample Query for obtaining a list of all event parameter keys and their respecti
  , UNNEST(event_params) ep
  group by 1
  order by 1 asc
- ````
+ ```
+
 **“event_data_user_properties.view”**
 Similar to the event parameters, user properties are likely to include custom attributes or tags.
 
@@ -242,7 +243,7 @@ Another file that is extended into “events.view”, and not referenced in the 
 
 Similar to how the landing and exit pages are obtained at the session-level, we are able to query within the scope of the session from within the unnested element. For example we can obtain the 3rd page view in a session with this dimension:
 
-````json
+```json
   dimension: page_path_3 {
     view_label: "Page Flow"
     group_label: "Page Path"
@@ -253,7 +254,7 @@ Similar to how the landing and exit pages are obtained at the session-level, we 
     where event_history.page_view_rank = 3
     and event_history.event_name = "page_view" limit 1) ;;
   }
- ```` 
+ ```
 
 If we look at the sql here, and remove the regular expression elements, this is what is occurring:
 The sessions table is linked to the events table on the model on the SL_KEY.
@@ -271,7 +272,8 @@ The Page Funnel view is extended into “sessions.view”. The dimensions and me
 
 The “tag” dimensions are what qualifies subsequent page views for inclusion in the resultset. If you filter for a value on Page 1, any subsequent page views that do not follow a qualifying “Page 1” event will be excluded from the measures defined in this view. This process repeats for all subsequently filtered page ranks (up to 6). This can be seen in the difference between the page_1_tag dimension and page_6_tag:
 
-````json
+```json
+
   dimension: page_1_tag {
     ...
     sql: case when {% condition page_1_filter %} ${page_1} {% endcondition %}
@@ -288,7 +290,8 @@ The “tag” dimensions are what qualifies subsequent page views for inclusion 
                and ${page_1} is not null and ${page_2} is not null and ${page_3} is not null
      and ${page_4} is not null and ${page_5} is not null and ${page_6} is not null
      then 1 else 0 end ;;  }
-````
+
+```
 
 **“event_funnel.view”**
 The event_funnel view is set up similarly to “page_funnel.view”, and is extended into “sessions.view” instead of being referenced in the model. As with the page_funnel, you can easily add/remove further iterations to the funnel by adding new dimensions with incrementing event_rank references. Due to the nature of the event data populated in GA4, it is possible for several (3 or more) events to fire with the exact same timestamp. For example: When a new user visits a site, they will generate “First Visit”, “Session Start”, and “Page View” events with identical event_timestamps. Due to this, the practicality of this funnel is limited without enhancing the event being pulled to include additional event parameters. Instead of “event_name”, another calculated dimension [such as “Full Event”] could be used, or additional filters to exclude events outside of the scope of the request could be added to increase the utility of this view.
@@ -299,6 +302,7 @@ Each Event Parameter you enable on GA4 will need to have a new dimension and any
 
 Sample Query for obtaining a list of all event parameter keys and what value they use:
 ```sql
+
  SELECT  ep.key
  , case when count(value.string_value) > 0 then true else false end as string_value_populated
  , case when count(value.int_value) > 0 then true else false end as int_value_populated
@@ -308,6 +312,7 @@ Sample Query for obtaining a list of all event parameter keys and what value the
  , UNNEST(event_params) ep
  group by 1
  order by 1 asc
+
 ```
 
 * Goals
@@ -327,15 +332,17 @@ Some common errors have occured when installing the block.  We will try to list 
     * This error normally occurs when the schema selected was changed from the original export. Since the BQ schema has the pattern `events_YYYYMMDD` or `events_intraday_YYYYMMDD`the Bad int64 comes from doing a query that is not able to parse the date from the table names. 
 
 * Resources exceeded when querying
-    * This happens when bringing a lot of data as a whole into the block. Since these are date sharded tables and schema needs to be validates across all of them, it normally takes a while to complete. However, sometimes it overflows the slot allocations. If you have a doubt if you will be having this kind of issue, it is recommended to query just a small amount of data for the first build (30 days for example) and then bring more data into the block. This can be done by uncommenting the filter stated on the `session_list_with_event_history` table. 
-````sql
+    * This happens when bringing a lot of data as a whole into the block. Since these are date sharded tables and schema needs to be validates across all of them, it normally takes a while to complete. However, sometimes it overflows the slot allocations. If you have a doubt if you will be having this kind of issue, it is recommended to query just a small amount of data for the first build (30 days for example) and then bring more data into the block. This can be done by uncommenting the filter stated on the `session_list_with_event_history` table.
+ 
+
+```sql
 
     WHERE timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+'))) >=
 ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -15 DAY)))
     and  timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+'))) <=
   ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -15 DAY), INTERVAL 16 DAY)))
   
-````
+```
 Sample filter for 15 days worth of data.
 
 ## Coming Soon
