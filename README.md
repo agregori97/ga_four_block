@@ -25,7 +25,7 @@ For anyone moving to GA4 from GA360, this represents a shift in scope. GA360 exp
 Each row in the event tables is a record of one event. There are several standard columns: event_date, event_timestamp, event_name, user_pseudo_id, for a full list of fields exported by default, see https://support.google.com/firebase/answer/7029846. In addition to single-value fields, there are nested fields as well.
 
 The simpler nested fields can be referenced with dot-notation sql definitions, as shown in this example of the “ECommerce Purchase Revenue” dimension:
-````json
+```json
 
   dimension: ecommerce__purchase_revenue {
     type: number
@@ -35,13 +35,13 @@ The simpler nested fields can be referenced with dot-notation sql definitions, a
     value_format_name: usd
   }
   
-````  
+```  
 Here, “purchase_revenue” is an element of the ecommerce field.
 
 However, Some elements within GA4 are packaged as repeating key/value pairs such as the “event_params” field:
 
-````json
-`event_params:[
+```json
+event_params:[
   {
     "value": {
       "string_value": "https://www.google.com/"
@@ -66,8 +66,8 @@ However, Some elements within GA4 are packaged as repeating key/value pairs such
     },
     "key": "ga_session_id"
   }
-]`
-````
+]
+```
 The structure for each element in this array is essentially:
 
 KEY
